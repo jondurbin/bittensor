@@ -173,12 +173,12 @@ class PriorityThreadPoolExecutor(_base.Executor):
             default_max_workers = (
                 os.getenv("BT_PRIORITY_MAX_WORKERS")
                 if os.getenv("BT_PRIORITY_MAX_WORKERS") != None
-                else 5
+                else os.cpu_count()
             )
             default_maxsize = (
                 os.getenv("BT_PRIORITY_MAXSIZE")
                 if os.getenv("BT_PRIORITY_MAXSIZE") != None
-                else 10
+                else os.cpu_count() * 2
             )
             parser.add_argument(
                 "--" + prefix_str + "priority.max_workers",

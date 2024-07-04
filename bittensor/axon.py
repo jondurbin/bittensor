@@ -23,6 +23,7 @@ import argparse
 import asyncio
 import contextlib
 import copy
+import glob
 import inspect
 import json
 import os
@@ -336,6 +337,13 @@ class axon:
 
         # Get wallet or use default.
         self.wallet = wallet or bittensor.wallet()
+
+        # Load all hotkeys for this wallet so we can use the same axon for multiple keys.
+        self.all_hotkeys = set()
+        for hotkey_path in glob.glob(os.path.expanduser(os.path.join(wallet.path, wallet.name, 'hotkeys', '*'))):
+            with open(hotkey_path, 'r') as infile:
+                hotkey_data = json.loads(infile.read())
+                self.all_hotkeys.add(hotkey_data['ss58Address'])
 
         # Build axon objects.
         self.uuid = str(uuid.uuid1())
@@ -881,10 +889,14 @@ class axon:
         """
         # Build the keypair from the dendrite_hotkey
         if synapse.dendrite is not None:
+            # Make sure this is one of our hotkeys.
+            if synapse.axon.hotkey not in self.all_hotkeys:
+                raise Exception(f"Signature mismatch with {message} and {synapse.dendrite.signature}")
+
             keypair = Keypair(ss58_address=synapse.dendrite.hotkey)
 
             # Build the signature messages.
-            message = f"{synapse.dendrite.nonce}.{synapse.dendrite.hotkey}.{self.wallet.hotkey.ss58_address}.{synapse.dendrite.uuid}.{synapse.computed_body_hash}"
+            message = f"{synapse.dendrite.nonce}.{synapse.dendrite.hotkey}.{synapse.axon.hotkey}.{synapse.dendrite.uuid}.{synapse.computed_body_hash}"
 
             # Build the unique endpoint key.
             endpoint_key = f"{synapse.dendrite.hotkey}:{synapse.dendrite.uuid}"
@@ -925,6 +937,8 @@ class axon:
                 raise Exception(
                     f"Signature mismatch with {message} and {synapse.dendrite.signature}"
                 )
+
+            bittensor.logging.info(f"VERIFY OK: {synapse.axon.hotkey}")
 
             # Success
             self.nonces[endpoint_key] = synapse.dendrite.nonce  # type: ignore
