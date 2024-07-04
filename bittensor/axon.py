@@ -891,7 +891,7 @@ class axon:
         if synapse.dendrite is not None:
             # Make sure this is one of our hotkeys.
             if synapse.axon.hotkey not in self.all_hotkeys:
-                raise Exception(f"Signature mismatch with {message} and {synapse.dendrite.signature}")
+                raise Exception(f"Message intended for hotkey that is not ours -- {message}|{synapse.dendrite.signature}")
 
             keypair = Keypair(ss58_address=synapse.dendrite.hotkey)
 
