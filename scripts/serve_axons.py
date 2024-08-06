@@ -46,7 +46,7 @@ def parse_args():
 def main():
     args = parse_args()
     bt.logging.info(f"Initializing subtensor with chain endpoint {args.endpoint}")
-    subtensor = bt.subtensor(chain_endpoint=args.endpoint)
+    subtensor = bt.subtensor(network=args.endpoint)
     ip = args.ip
     port = args.port
     for hotkey in args.hotkeys:
